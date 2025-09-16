@@ -1,0 +1,337 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Conversión de Base de Datos - ER/EER</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Mermaid JS -->
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@9.4.0/dist/mermaid.min.js"></script>
+    
+    <!-- Estilos locales -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Contenedor para alertas emergentes -->
+    <div class="alert-container"></div>
+
+    <!-- Barra de navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="fas fa-database me-2"></i>Sistema de Conversión de Base de Datos
+            </a>
+        </div>
+    </nav>
+
+    <!-- Contenedor principal -->
+    <div class="container mt-4">
+        <!-- Encabezado principal -->
+        <div class="header text-center mb-4">
+            <h1 class="display-5">Sistema de Conversión de Base de Datos</h1>
+            <p class="lead">Convierte entre modelos de base de datos y traduce entre SQL y Álgebra Relacional</p>
+        </div>
+
+        <!-- Sistema de pestañas para navegación -->
+        <ul class="nav nav-tabs mb-4" id="myTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="connection-tab" data-bs-toggle="tab" data-bs-target="#connection" type="button" role="tab" aria-controls="connection" aria-selected="true">
+                    <i class="fas fa-server me-1"></i>Conexión
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="er-tab" data-bs-toggle="tab" data-bs-target="#er" type="button" role="tab" aria-controls="er" aria-selected="false">
+                    <i class="fas fa-project-diagram me-1"></i>Modelo ER/EER
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="relational-tab" data-bs-toggle="tab" data-bs-target="#relational" type="button" role="tab" aria-controls="relational" aria-selected="false">
+                    <i class="fas fa-table me-1"></i>Modelo Relacional
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="translator-tab" data-bs-toggle="tab" data-bs-target="#translator" type="button" role="tab" aria-controls="translator" aria-selected="false">
+                    <i class="fas fa-language me-1"></i>Traductor SQL-AR
+                </button>
+            </li>
+        </ul>
+
+        <!-- Contenido de las pestañas -->
+        <div class="tab-content" id="myTabContent">
+            <!-- Pestaña 1: Conexión a base de datos -->
+            <div class="tab-pane fade show active" id="connection" role="tabpanel" aria-labelledby="connection-tab">
+                <div class="connection-form card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-server me-2"></i>Conexión a Base de Datos SQL Server</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Servidor</label>
+                                    <input type="text" class="form-control" id="server" placeholder="Nombre del servidor" value="localhost\SQLEXPRESS">
+                                    <div class="error-message" id="server-error"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Base de Datos</label>
+                                    <input type="text" class="form-control" id="database" placeholder="Nombre de la BD" value="SistemaConversionDB1">
+                                    <div class="error-message" id="database-error"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Usuario</label>
+                                    <input type="text" class="form-control" id="username" placeholder="Usuario" value="sa">
+                                    <div class="error-message" id="username-error"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">Contraseña</label>
+                                    <input type="password" class="form-control" id="password" placeholder="Contraseña" value="">
+                                    <div class="error-message" id="password-error"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <button class="btn btn-primary" id="connect-btn"><i class="fas fa-plug me-1"></i> Conectar</button>
+                            <button class="btn btn-secondary" id="reset-btn"><i class="fas fa-sync me-1"></i> Restablecer</button>
+                            <button class="btn btn-info" id="save-config-btn"><i class="fas fa-save me-1"></i> Guardar Configuración</button>
+                            <span class="connection-status status-disconnected" id="connection-status">Desconectado</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <i class="fas fa-database me-2"></i>Información de la Base de Datos
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5>Entidades detectadas</h5>
+                                <ul class="list-group" id="entities-list">
+                                    <li class="list-group-item">Esperando conexión...</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h5>Relaciones detectadas</h5>
+                                <ul class="list-group" id="relationships-list">
+                                    <li class="list-group-item">Esperando conexión...</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 2: Modelo ER/EER -->
+            <div class="tab-pane fade" id="er" role="tabpanel" aria-labelledby="er-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-project-diagram me-2"></i>Opciones de Visualización</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo de visualización</label>
+                                    <select class="form-select" id="visualization-type">
+                                        <option value="text">Texto formateado</option>
+                                        <option value="mermaid">Diagrama Mermaid</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Opciones de visualización</label>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="show-cardinalities" checked>
+                                        <label class="form-check-label" for="show-cardinalities">Mostrar cardinalidades</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="show-attributes" checked>
+                                        <label class="form-check-label" for="show-attributes">Mostrar atributos</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <i class="fas fa-project-diagram me-2"></i>Diagrama ER-EER Generado
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <button class="btn btn-success" id="generate-btn"><i class="fas fa-sync me-1"></i> Generar Diagrama</button>
+                            <button class="btn btn-info" id="export-btn"><i class="fas fa-download me-1"></i> Exportar</button>
+                            <button class="btn btn-warning" id="fix-mermaid-btn"><i class="fas fa-wrench me-1"></i> Reparar Mermaid</button>
+                        </div>
+                        
+                        <div class="progress mt-3" id="eer-progress" style="display: none;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        
+                        <div class="diagram-container" id="eer-diagram">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando diagrama...</span>
+                                </div>
+                                <p class="mt-3">Conéctese a una base de datos y haga clic en 'Generar Diagrama'</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle me-2"></i>Leyenda de Símbolos ER/EER
+                    </div>
+                    <div class="card-body">
+                        <div class="legend">
+                            <div class="legend-item">
+                                <div class="legend-color legend-rectangle"></div>
+                                <div class="legend-text">Rectángulo - Entidad Fuerte</div>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color legend-rectangle" style="border: 2px solid #4c72b0;"></div>
+                                <div class="legend-text">Rectángulo Doble - Entidad Débil</div>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color legend-ellipse"></div>
+                                <div class="legend-text">Óvalo - Atributo</div>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color legend-ellipse" style="border: 2px solid #6b8e23;"></div>
+                                <div class="legend-text">Óvalo Doble - Atributo Multivaluado</div>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color legend-ellipse" style="border-style: dashed;"></div>
+                                <div class="legend-text">Óvalo Punteado - Atributo Derivado</div>
+                            </div>
+                            <div class="legend-item">
+                                <div class="legend-color legend-diamond"></div>
+                                <div class="legend-text">Rombo - Relación</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 3: Modelo Relacional -->
+            <div class="tab-pane fade" id="relational" role="tabpanel" aria-labelledby="relational-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-table me-2"></i>Modelo Relacional
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i> Esta funcionalidad convierte el esquema de la base de datos a notación de modelo relacional.
+                        </div>
+                        
+                        <div class="text-center mb-3">
+                            <button class="btn btn-success" id="generate-relational-btn">
+                                <i class="fas fa-sync me-1"></i> Generar Modelo Relacional
+                            </button>
+                            <button class="btn btn-info" id="export-relational-btn">
+                                <i class="fas fa-download me-1"></i> Exportar
+                            </button>
+                        </div>
+                        
+                        <div class="progress mt-3" id="relational-progress" style="display: none;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                        </div>
+                        
+                        <div class="diagram-container" id="relational-diagram">
+                            <div class="text-center py-5">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="visually-hidden">Cargando modelo relacional...</span>
+                                </div>
+                                <p class="mt-3">Conéctese a una base de datos y haga clic en 'Generar Modelo Relacional'</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pestaña 4: Traductor SQL-Álgebra Relacional -->
+            <div class="tab-pane fade" id="translator" role="tabpanel" aria-labelledby="translator-tab">
+                <div class="card">
+                    <div class="card-header">
+                        <i class="fas fa-language me-2"></i>Traductor SQL ↔ Álgebra Relacional
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs mb-3" id="translator-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="sql-to-ar-tab" data-bs-toggle="tab" data-bs-target="#sql-to-ar" type="button" role="tab" aria-controls="sql-to-ar" aria-selected="true">
+                                    SQL → Álgebra Relacional
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="ar-to-sql-tab" data-bs-toggle="tab" data-bs-target="#ar-to-sql" type="button" role="tab" aria-controls="ar-to-sql" aria-selected="false">
+                                    Álgebra Relacional → SQL
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="translator-tabs-content">
+                            <div class="tab-pane fade show active" id="sql-to-ar" role="tabpanel" aria-labelledby="sql-to-ar-tab">
+                                <div class="mb-3">
+                                    <label class="form-label">Consulta SQL</label>
+                                    <textarea class="form-control sql-ar-container" id="sql-query" placeholder="Escriba su consulta SQL aquí...">SELECT nombre, edad FROM usuarios WHERE edad > 30</textarea>
+                                </div>
+                                <div class="text-center mb-3">
+                                    <button class="btn btn-primary" id="translate-sql-to-ar-btn">
+                                        <i class="fas fa-exchange-alt me-1"></i> Traducir a Álgebra Relacional
+                                    </button>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Álgebra Relacional Resultante</label>
+                                    <div class="code-container" id="ar-result">
+                                        El resultado de la traducción aparecerá aquí...
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="ar-to-sql" role="tabpanel" aria-labelledby="ar-to-sql-tab">
+                                <div class="mb-3">
+                                    <label class="form-label">Expresión de Álgebra Relacional</label>
+                                    <textarea class="form-control sql-ar-container" id="ar-expression" placeholder="Escriba su expresión de álgebra relacional aquí...">π nombre, edad (σ edad > 30 (usuarios))</textarea>
+                                </div>
+                                <div class="text-center mb-3">
+                                    <button class="btn btn-primary" id="translate-ar-to-sql-btn">
+                                        <i class="fas fa-exchange-alt me-1"></i> Traducir a SQL
+                                    </button>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Consulta SQL Resultante</label>
+                                    <div class="code-container" id="sql-result">
+                                        El resultado de la traducción aparecerá aquí...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- JavaScript local -->
+    <script src="script.js"></script>
+</body>
+</html>
