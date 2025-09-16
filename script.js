@@ -431,8 +431,9 @@ document.addEventListener('DOMContentLoaded', function() {
             showAlert('Error de conexión: ' + error.message, 'danger');
         })
         .finally(() => {
+            // Restaurar botón de conexión
             connectBtn.disabled = false;
-            connectBtn.innerHTML = '<i class="fas fa-plug me-1'></i> Conectar';
+            connectBtn.innerHTML = '<i class="fas fa-plug me-1"></i> Conectar';
         });
     });
 
@@ -825,9 +826,144 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Función para traducir Álgebra Relacional a SQL
+    // Función para traducir Álgebra Relacional a SQL (mejorada)
     function algebraToSql(arExpression) {
         try {
+            // Análisis básico de expresiones de álgebra relacional
             const ar = arExpression.trim();
             
-            const projectionPattern = /π\s+([^*].
+            // Patrones para diferentes operaciones
+            const projectionPattern = /π\s+([^*].*?)\s+\((.*)\)/;
+            const selectionPattern = /σ\s+(.*?)\s+\((.*)\)/;
+            const joinPattern = /\((.*)\)\s+⨝\s+\((.*)\)/;
+            
+            // Verificar si es una proyección
+            const projectionMatch = ar.match(projectionPattern);
+            if (projectionMatch) {
+                let columns = projectionMatch[1].trim();
+                const innerExpression = projectionMatch[2].trim();
+                
+                // Si la expresión interna es una selección
+                const selectionMatch = innerExpression.match(selectionPattern);
+                if (selectionMatch) {
+                    const condition = selectionMatch[1].trim();
+                    const table = selectionMatch[2].trim();
+                    
+                    // Manejar "todas_las_columnas" como *
+                    if (columns === 'todas_las_columnas') {
+                        columns = '*';
+                    }
+                    
+                    return `SELECT ${columns} FROM ${table} WHERE ${condition}`;
+                } else {
+                    // Es solo una tabla
+                    if (columns === 'todas_las_columnas') {
+                        columns = '*';
+                    }
+                    
+                    return `SELECT ${columns} FROM ${innerExpression}`;
+                }
+            }
+            
+            // Verificar si es una selección
+            const selectionMatch = ar.match(selectionPattern);
+            if (selectionMatch) {
+                const condition = selectionMatch[1].trim();
+                const table = selectionMatch[2].trim();
+                return `SELECT * FROM ${table} WHERE ${condition}`;
+            }
+            
+            // Verificar si es un join
+            const joinMatch = ar.match(joinPattern);
+            if (joinMatch) {
+                const table1 = joinMatch[1].trim();
+                const table2 = joinMatch[2].trim();
+                return `SELECT * FROM ${table1} JOIN ${table2} ON [condición]`;
+            }
+            
+            // Si es solo un nombre de tabla
+            if (/^\w+$/.test(ar)) {
+                return `SELECT * FROM ${ar}`;
+            }
+            
+            return "Expresión de álgebra relacional no soportada para traducción";
+            
+        } catch (error) {
+            console.error('Error en traducción AR a SQL:', error);
+            return `Error en la traducción: ${error.message}`;
+        }
+    }
+
+    // Event listener para el botón de traducción SQL a Álgebra Relacional
+    document.getElementById('translate-sql-to-ar-btn').addEventListener('click', function() {
+        const sqlQuery = document.getElementById('sql-query').value;
+        
+        if (!sqlQuery.trim()) {
+            showAlert('Por favor, ingrese una consulta SQL', 'warning');
+            return;
+        }
+        
+        // Mostrar indicador de carga
+        const button = document.getElementById('translate-sql-to-ar-btn');
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Traduciendo...';
+        
+        // Usar timeout para simular procesamiento y permitir que la UI se actualice
+        setTimeout(() => {
+            try {
+                const arExpression = sqlToAlgebra(sqlQuery);
+                document.getElementById('ar-result').textContent = arExpression;
+                showAlert('Traducción completada exitosamente', 'success');
+            } catch (error) {
+                document.getElementById('ar-result').textContent = `Error: ${error.message}`;
+                showAlert('Error en la traducción: ' + error.message, 'danger');
+            } finally {
+                // Restaurar botón
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }, 500);
+    });
+
+    // Event listener para el botón de traducción Álgebra Relacional a SQL
+    document.getElementById('translate-ar-to-sql-btn').addEventListener('click', function() {
+        const arExpression = document.getElementById('ar-expression').value;
+        
+        if (!arExpression.trim()) {
+            showAlert('Por favor, ingrese una expresión de álgebra relacional', 'warning');
+            return;
+        }
+        
+        // Mostrar indicador de carga
+        const button = document.getElementById('translate-ar-to-sql-btn');
+        const originalText = button.innerHTML;
+        button.disabled = true;
+        button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i> Traduciendo...';
+        
+        // Usar timeout para simular procesamiento y permitir que la UI se actualice
+        setTimeout(() => {
+            try {
+                const sqlQuery = algebraToSql(arExpression);
+                document.getElementById('sql-result').textContent = sqlQuery;
+                showAlert('Traducción completada exitosamente', 'success');
+            } catch (error) {
+                document.getElementById('sql-result').textContent = `Error: ${error.message}`;
+                showAlert('Error en la traducción: ' + error.message, 'danger');
+            } finally {
+                // Restaurar botón
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }
+        }, 500);
+    });
+
+    // Inicializar Mermaid al cargar la página
+    initializeMermaid();
+    
+    // Cargar configuración guardada
+    loadSavedConfig();
+    
+    // Mostrar mensaje de bienvenida
+    showAlert('Sistema de Conversión de Base de Datos cargado correctamente', 'success');
+});
