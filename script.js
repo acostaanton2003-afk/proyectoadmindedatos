@@ -1,3 +1,4 @@
+
 // Inicialización cuando el DOM está completamente cargado
 document.addEventListener('DOMContentLoaded', function() {
     // Inicializar mermaid con configuración robusta para diagramas ER
