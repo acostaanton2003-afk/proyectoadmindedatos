@@ -14,7 +14,7 @@ app.config['DEBUG'] = True
 app.config['SECRET_KEY'] = 'supersecretkey'
 
 # Configuración de la base de datos
-DEFAULT_SERVER = 'ANTON\SQLEXPRESS'
+DEFAULT_SERVER = r'ANTON\SQLEXPRESS'
 DEFAULT_DATABASE = 'SistemaConversionDB1'
 DEFAULT_USERNAME = 'sa'
 DEFAULT_PASSWORD = '1234'  # Cambia esto por tu password real
